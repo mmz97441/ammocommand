@@ -1,0 +1,5 @@
+{
+  "name": "AmmoCommand",
+  "description": "Application de gestion de commandes groupées de munitions pour club de tir. Version 2.2 avec historique des paiements et gestion logistique.",
+  "requestFramePermissions": []
+}
