@@ -226,7 +226,7 @@ const AppContent: React.FC = () => {
       {/* Footer */}
       <footer className="bg-slate-100 border-t border-slate-200 py-6 mt-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
-          <p>© 2024 AmmoCommand v2.2 - Gestion Simplifiée de Commandes</p>
+          <p>© 2024 AmmoCommand v2.3 - Gestion Simplifiée de Commandes</p>
           <p className="mt-1 text-xs">Propulsé par Firebase Cloud</p>
         </div>
       </footer>
