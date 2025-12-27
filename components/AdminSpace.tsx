@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogOut, Search, Download, CheckCircle, Truck, Wallet, Eye, EyeOff, Mail, Loader2, Settings, ShieldAlert, UserPlus, Trash2, AlertTriangle } from 'lucide-react';
+import { Lock, LogOut, Search, Download, CheckCircle, Truck, Wallet, Eye, EyeOff, Mail, Loader2, Settings, ShieldAlert, UserPlus, Trash2, AlertTriangle, Package } from 'lucide-react';
 import { Order, Transaction, PricingConfig } from '../types';
 import { useToast } from './ui/Toast';
 import { formatCurrency, formatShortDate } from '../utils/validation';
@@ -258,7 +258,10 @@ export const AdminSpace: React.FC<Props> = ({ orders, onLogout, onUpdateOrder, o
   const stats = {
     totalRevenue: orders.reduce((acc, o) => acc + o.totalAmount, 0),
     collected: orders.reduce((acc, o) => acc + o.transactions.reduce((s, t) => s + t.amount, 0), 0),
-    pendingDelivery: orders.filter(o => !o.isDelivered).length
+    pendingDelivery: orders.filter(o => !o.isDelivered).length,
+    totalCartons: orders.reduce((acc, o) => acc + o.qty24g + o.qty28g, 0),
+    total24g: orders.reduce((acc, o) => acc + o.qty24g, 0),
+    total28g: orders.reduce((acc, o) => acc + o.qty28g, 0)
   };
 
   if (authLoading) {
@@ -411,7 +414,7 @@ export const AdminSpace: React.FC<Props> = ({ orders, onLogout, onUpdateOrder, o
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
@@ -431,6 +434,20 @@ export const AdminSpace: React.FC<Props> = ({ orders, onLogout, onUpdateOrder, o
             <div>
               <p className="text-sm text-slate-500">Encaissé</p>
               <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.collected)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                <Package size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Total Cartons</p>
+              <div className="flex flex-col">
+                 <span className="text-2xl font-bold text-slate-900">{stats.totalCartons}</span>
+                 <span className="text-xs text-slate-400 font-medium">({stats.total24g}x 24g / {stats.total28g}x 28g)</span>
+              </div>
             </div>
           </div>
         </div>

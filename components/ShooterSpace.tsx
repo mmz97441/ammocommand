@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, AlertTriangle, Check, FileText, History, Mail, User as UserIcon, LogOut, Lock, Loader2, UserPlus, Save } from 'lucide-react';
+import { Target, AlertTriangle, Check, FileText, History, Mail, User as UserIcon, LogOut, Lock, Loader2, UserPlus, Save, X, Receipt, Calendar, CreditCard } from 'lucide-react';
 import { Order, PricingConfig, UserProfile } from '../types';
 import { isValidEmail, isValidLicense, isValidPhone, formatCurrency, formatShortDate } from '../utils/validation';
 import { useToast } from './ui/Toast';
@@ -35,6 +35,7 @@ export const ShooterSpace: React.FC<Props> = ({ orders, onOrderSubmit, pricing, 
   const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // -- New Order Form State --
   // Ces états sont initialisés quand le profil est chargé
@@ -515,8 +516,12 @@ export const ShooterSpace: React.FC<Props> = ({ orders, onOrderSubmit, pricing, 
                     const percent = Math.min((totalPaid / order.totalAmount) * 100, 100);
 
                     return (
-                        <div key={order.id} className="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
-                             <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row justify-between md:items-center gap-2">
+                        <div 
+                            key={order.id} 
+                            onClick={() => setSelectedOrder(order)}
+                            className="bg-white rounded-xl shadow border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md hover:border-slate-300 transition group"
+                        >
+                             <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row justify-between md:items-center gap-2 group-hover:bg-slate-100 transition">
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="font-bold text-slate-900">Commande du {formatShortDate(order.createdAt)}</span>
@@ -562,11 +567,147 @@ export const ShooterSpace: React.FC<Props> = ({ orders, onOrderSubmit, pricing, 
                                  <div className="w-full bg-slate-200 rounded-full h-1.5">
                                     <div className={`h-1.5 rounded-full ${isFullyPaid ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{width: `${percent}%`}}></div>
                                  </div>
+                                 <div className="mt-2 text-center text-xs text-slate-400 font-medium group-hover:text-slate-600 transition">
+                                     Cliquez pour voir le détail
+                                 </div>
                             </div>
                         </div>
                     );
                 })
             )}
+        </div>
+      )}
+
+      {/* DETAIL MODAL */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedOrder(null)} />
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg relative z-10 overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="bg-slate-900 p-6 flex justify-between items-start">
+               <div>
+                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Receipt className="text-emerald-400" size={24} />
+                    Détail Commande
+                 </h2>
+                 <p className="text-slate-400 text-sm mt-1">
+                    {formatShortDate(selectedOrder.createdAt)} • <span className="font-mono">#{selectedOrder.id.slice(-6)}</span>
+                 </p>
+               </div>
+               <button 
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-2 bg-white/10 text-white hover:bg-white/20 rounded-full transition"
+               >
+                  <X size={20} />
+               </button>
+            </div>
+
+            <div className="overflow-y-auto p-6 space-y-6">
+                
+                {/* Product Breakdown */}
+                <div>
+                   <h3 className="text-sm font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
+                       <Target size={16} /> Contenu
+                   </h3>
+                   <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                       <div className="flex justify-between p-3 border-b border-slate-200 bg-white">
+                           <span className="text-slate-600">Cartons 24g</span>
+                           <span className="font-bold text-slate-900">x {selectedOrder.qty24g}</span>
+                       </div>
+                       <div className="flex justify-between p-3 border-b border-slate-200 bg-white">
+                           <span className="text-slate-600">Cartons 28g</span>
+                           <span className="font-bold text-slate-900">x {selectedOrder.qty28g}</span>
+                       </div>
+                       <div className="flex justify-between p-3 bg-slate-100">
+                           <span className="font-bold text-slate-700">Total Commande</span>
+                           <span className="font-bold text-slate-900">{formatCurrency(selectedOrder.totalAmount)}</span>
+                       </div>
+                   </div>
+                </div>
+
+                {/* Payment Status */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
+                       <CreditCard size={16} /> Statut Paiement
+                   </h3>
+                   {(() => {
+                        const totalPaid = selectedOrder.transactions.reduce((sum, t) => sum + t.amount, 0);
+                        const remaining = selectedOrder.totalAmount - totalPaid;
+                        const isPaid = remaining <= 0;
+                        const percent = Math.min((totalPaid / selectedOrder.totalAmount) * 100, 100);
+
+                        return (
+                            <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                                <div className="flex justify-between items-end mb-2">
+                                    <div>
+                                        <div className="text-xs text-slate-500 uppercase font-bold">Reste à payer</div>
+                                        <div className={`text-xl font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                            {isPaid ? 'Réglé' : formatCurrency(remaining)}
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs text-slate-500">Versé</div>
+                                        <div className="font-semibold text-slate-900">{formatCurrency(totalPaid)}</div>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-slate-200 rounded-full h-2">
+                                    <div className={`h-2 rounded-full ${isPaid ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{width: `${percent}%`}}></div>
+                                </div>
+                            </div>
+                        );
+                   })()}
+                </div>
+
+                {/* Transaction History */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
+                       <History size={16} /> Historique des versements
+                   </h3>
+                   {selectedOrder.transactions.length === 0 ? (
+                       <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm">
+                           Aucun versement enregistré
+                       </div>
+                   ) : (
+                       <div className="space-y-2">
+                           {selectedOrder.transactions
+                             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                             .map((t, idx) => (
+                               <div key={idx} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-lg shadow-sm">
+                                   <div className="flex items-center gap-3">
+                                       <div className="bg-slate-100 p-2 rounded text-slate-500">
+                                           <Calendar size={16} />
+                                       </div>
+                                       <div>
+                                           <div className="font-medium text-slate-900">{t.method}</div>
+                                           <div className="text-xs text-slate-500">{formatShortDate(t.date)}</div>
+                                       </div>
+                                   </div>
+                                   <div className="font-bold text-slate-900">
+                                       {formatCurrency(t.amount)}
+                                   </div>
+                               </div>
+                           ))}
+                       </div>
+                   )}
+                </div>
+
+            </div>
+            
+            {/* Footer Status */}
+            <div className="bg-slate-50 p-4 border-t border-slate-200 text-center">
+                {selectedOrder.isDelivered ? (
+                    <span className="inline-flex items-center gap-2 text-emerald-700 font-bold bg-emerald-100 px-4 py-2 rounded-full">
+                        <Check size={18} /> Commande Livrée
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-2 text-amber-700 font-bold bg-amber-100 px-4 py-2 rounded-full">
+                        <Loader2 size={18} className="animate-spin-slow" /> En cours de traitement
+                    </span>
+                )}
+            </div>
+
+          </div>
         </div>
       )}
     </div>
